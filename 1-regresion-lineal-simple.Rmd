@@ -1,0 +1,485 @@
+---
+title: "El modelo de regresión lineal simple "
+author: "J.Cano"
+date: "Enero - 2019"
+output:
+  html_document:
+    theme: cerulean
+    highlight: pygments
+    number_sections: true
+    toc: true
+    toc_float:
+      collapsed: true
+      smooth_scrool: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## El modelo de regresión lineal simple
+
+Consideremos el siguiente ejemplo: el dataset **cars** incluido en **R-base** es un objeto tipo **dataframe** que contiene una lista de velocidades y distancia de frenada para varios vehículos como fueron registrados en 1920 (más información con **?cars**)
+
+```{r}
+str(cars)
+```
+
+Podemos representar gráficamente este conjunto de datos con la función **plot**
+
+```{r}
+plot(dist ~ speed, data = cars, 
+     xlab = "Speed(mph)", 
+     ylab = "Stopping Distance (feet)",
+     main = "Stopping Distance vs Speed",
+     pch = 20,
+     cex = 2,
+     col = "grey")
+```
+
+Esta gráfica sugiere que debe de existir una relación entre la distancia de frenado de un vehículo y su velocidad. Una primera aproximación a esta relación es un **Modelo de Regresión Lineal Simple** también lllamado en inglés **SLM (Simple Linear Regression)**, llamado de esta manera porque buscamos una relación entre una **variable dependiente Y** y una **variable independiente o predictora X** de la forma:
+
+$$
+\begin{equation}
+Y = \beta_0 + \beta_1 \cdot X + \epsilon
+\end{equation}
+$$
+
+Este modelo hace una serie de hipótesis:
+
+* **Lineal**: la relación entre **Y** y **x** es de tipo lineal
+* **Independiente**: los errores son independientes
+* **Normal**: los errores estan normalmente distribuidos
+* **Igual varianza**: para cualquier valor de **x** la varianza de Y es la misma $\sigma^2$
+
+También se asume que **x** no es aleatorio, sino que tiene unos valores conocidos y no se hacen hipotesis sobre su distribución.
+
+¿Qué quiere decir **Modelo de Regresión Lineal Simple**?
+
+* **Regresión** quiere decir que estamos intentando medir una relación entre una variable aleatoria y otra independiente (o explicativa)
+* **Lineal**, indica que Y es una combinación lineal de X
+* **Simple** hace referencia al hecho de que solo existe una única variable explicativa
+
+La ecuación anterior podemos escribirla para cada punto de esta manera:
+
+$$
+\begin{equation}
+Y_i = \beta_0 + \beta_1 \cdot x_i + \epsilon_i
+\end{equation}
+$$
+
+Las variables $x_i$ no son estocásticas (aleatorias), sino que son constantes conocidas de valor fijo (de ahí que se escriban en minúscula) mientras que $Y_i$ sigue siendo una variable aleatoria y de valor estimado (y por eso se escribe en mayúsculas)
+
+$\epsilon_i$ es el error entre el valor observado y el valor estimado y es una variable aleatoria independiente normalmente distribuida con media 0 y varianza $\sigma^2$.
+
+$$
+\begin{equation}
+\epsilon_i \sim N(0, \sigma^2)
+\end{equation}
+$$
+
+Este modelo tiene tres **parametros** que deben ser estimados: $\beta_0$, $\beta_1$ y $\sigma^2$ que son constantes pero desconocidas. 
+
+Si centramos los datos de la variable independiente en su media, $\beta_0$ es el valor esperado de **Y** para el valor medio de **X**. Esta es una translación de los datos que podemos conseguir con la función **scale**
+
+```{r}
+speed.c <- scale(cars$speed, center=TRUE, scale=FALSE)
+```
+
+El método convencional bajo estas hipótesis de partida para determinar estos coeficientes es el **método de los mínimos cuadrados ordinarios (MCO)** 
+
+Tambień es posible usar el **método de máxima verosimilitud** que es más general
+
+## Metodo de máxima verosimilitud
+
+maximul likelihood estimation (MLE) en inglés
+
+Trata de maximizar un estimador  de lo que se llama "función de versimilitud""
+
+
+Links:
+
+(RPubs: Maximum Likelihood Fitting in R )[https://rpubs.com/YaRrr/MLTutorial]
+
+## Metodo de los minimos cuadrados (MCO)
+
+En inglés **Least Squares Approach**
+
+Esta ecuación podemos determinarla por diversos métodos: y uno de ellos es el de  **método de los mínimos cuadrados**. En este método se trata de minimizar la suma de los cuadrados de las distancias de los puntos a la linea. En **R**, la función que nos permite realizar esto es **lm()**
+
+```{r}
+cars.lm <- lm(dist ~ speed, data = cars)
+class(cars.lm) # la nueva variable es un objeto de clase 'lm'
+typeof(cars.lm) # y es una lista
+names(cars.lm) # los elementos de la lista
+```
+
+Como es una lista podemos acceder a los valores mediante el operador **$**
+
+```{r}
+cars.lm$coefficients # los coeficientes de ajuste de la ecuación
+head(cars.lm$residuals) # los valores residuales
+head(cars.lm$fitted.values) # los valores ajustados
+```
+
+
+Los coeficientes $\beta_0$ y $\beta_1$ de la regresión lineal se obtienen tambień con **coef()**
+
+```{r}
+coef(cars.lm)
+```
+
+
+la función **abline()** superpone una linea de la forma **a+bx** a una gráfica creada por plot (de ahí el nombre **ab**line, **ab**ove line)
+
+```{r}
+plot(dist ~ speed, data = cars, 
+     xlab = "Speed(mph)", 
+     ylab = "Stopping Distance (feet)",
+     main = "Stopping Distance vs Speed",
+     pch = 20,
+     cex = 2,
+     col = "grey")
+abline(coef(cars.lm), lwd = 3, col = "darkorange")
+```
+
+De la misma manera que con los coeficientes podemos acceder a los residuos con  **residuals()**, y a los valores ajustados con **fitted()**
+
+```{r}
+head(residuals(cars.lm))
+head(fitted(cars.lm))
+```
+
+## Interpretación de los resultados
+
+La función **summary** nos proporciona un resumen con diversos valores estadísticos del modelo creado:
+
+```{r}
+summary(cars.lm)
+```
+
+**summary** es una lista a cuyos datos podríamos acceder con el operador **$**. Recordemos que una lista puede contener otras listas. Accedemos a los valores de estas listas con los operadors **$** y **[]**
+
+```{r}
+names(summary(cars.lm)) # las etiquetas de los elementos de la lista
+summary(cars.lm)$coefficients # los coeficientes y sus estadisticos
+summary(cars.lm)$coefficients[,2] # Std.Error de los coeficientes
+```
+
+
+Repasemos los apartados **call, residuals, coefficients, Residual standard Error, Multiple R-Squared**
+
+
+### Call
+
+Es la fórmula que hemos usado para la regresión lineal
+
+```{r}
+summary(cars.lm)$call # 
+```
+
+### Residuos
+
+Son la diferencia entre los valores observados y los valores estimados. Es un vector al que podemos acceder y representar con **plot**
+
+```{r}
+plot(cars.lm$residuals)
+abline(0,0) # añade una linea horizontal en y=0
+```
+
+Estudiar los residuos es importante para determinar si el ajuste contiene algún tipo de error. A simple vista no parece que existan efectos de **heterocedasticidad** o **autocorrelación**. Parecen estar dispersos de forma aleatoria, lo cual es algo deseable; sin embargo vemos también que cuanto mayor es la velocidad (más a la derecha en el gŕafico), mayor es el valor residual.
+
+El resumen nos ofrece una información estadistica acerca de su distribución mediante los **cuantiles Q1, Q2 (mediana), Q3, el valor máximo y el valor mínimo**. Aquí debemos que la media está próxima a cero y la simetría de la distribución de estos residuos. Una buena estimación tendrá una mayor simetría. Estos valores podemos verlos gráficamente con un gráfico boxplot:
+
+```{r}
+boxplot(cars.lm$residuals)
+```
+
+o un histograma
+
+```{r}
+hist(cars.lm$residuals)
+```
+
+Lo que vemos con los cuantiles, el boxplot o el histograma es que los residuos **parecen seguir una distribución normal, con media próxima a cero y algo de sesgo a la derecha**. Un sesgo moderado es aceptable para muestras de este tipo.. 
+
+Otra forma de comprobar si los residuos siguen una distribución normal es el diagrama de quantiles o diagrama Q-Q:
+
+```{r}
+qqnorm(cars.lm$residuals)
+qqline(cars.lm$residuals, col = "blue")
+```
+
+La interpretación de este sesgo es que **valores altos de la velocidad no estaran bien ajustadas por el modelo**
+
+### Coeficientes: valores estimados
+
+Son los valores de $\beta_0$ y $beta_1$ de la ecuación. 
+
+$$
+\begin{equation}
+Y_i = \beta_0 + \beta_1 \cdot x_i + \epsilon_i
+\end{equation}
+$$
+
+el valor de la segunda fila, speed, es la pendiente del ajuste, $\beta_1$. Lo que nos dice es que por cada incremento de 1mph, el incremento de la distancia de frenado es 3.9324 feet. El primer valor (intercept) es donde la recta corta al eje de ordenadas. En este ejemplo no tiene ningún significado. Cuando los datos de la variable dependiente están dentrados.
+
+Nota: podemos centrar los valores 
+
+### Coeficientes: error estándar (Std. error)
+
+El **error estandar** es una medida de la incertidumbre de los coeficientes estimados. No confundir con la **desviación estándar** es una medida de la dispersión. El principal uso de los errores estándar es el de poder dar **intervalos de confianza de los valores medios**
+
+Es el error residual dividido entre la raiz cuadrada de la suma de los cuadrados de.....
+
+$$
+SE[{\beta_1}] = \frac{s_1}{\sqrt{?}} = 
+$$
+
+Este error depende del tamaño de la muestra (cuanto mayor sea la muestra, mejor).  
+
+El error estandar puede usarse para calcular **intervalos de confianza**. R nos proporciona los intervalos de confianza con la función **confint**
+
+```{r}
+confint(cars.lm, level = 0.95)
+```
+
+lo que quiere decir que con un 95% de confianza un coche (de 1920!) sufrirá un incremento de la distancia de frenado entre 3.09696 y 4.767853 pies si la diferencia se incrementa en 1 mph. Y la media de las distancias de frenado se encontrará con un 95% de probabilidad entre los valores de ese intervalo.
+
+Más información:
+
+[R-bloggers: standard deviation vs standard error](https://www.r-bloggers.com/standard-deviation-vs-standard-error/)
+
+### Coeficientes: t-value y Pr(>t)
+
+Es el valor del estadístico-t para el test de contraste de la hipótesis nula $H_0:\beta_1 = 0$ frenta a la alternativa $H_a:\beta_1 \neq 0$. A este contraste se le llama **contraste individual** porque es de un coeficiente, frente al **contraste global** que se mide con el estadístico-F.
+
+Para la hipótesis nula:
+
+$$
+t = \frac{\hat{\beta_1}-0}{SE[\hat{\beta_1}]}
+$$
+
+El t-valor se usa para determinar mediante la distribución-t el valor de p (Pr(>|t)) 
+
+### Coeficientes: Pr(>t)
+
+Son los **valores-p** o **p-value**, el área bajo la curva de la distribución t-student Es una probabilidad y el valor tomado como corte es 0.05 (5%) para 
+
+Sirve para descartar la hipótesis nula que en este caso es que no exista una relación enre distancia y velocidad. Valores alejados del cero y grandes respecto al error estandar son buenos. 
+
+el punto de corte es el nivel de significación $\alpha$ que hayamos elegido. Habitualmente se toma $\alpha=5%$ Si $p<0.05$ entonces podemos descartar la hipótesis nula $H_0$ en favor de la hipótesis alternativa $H_a$
+
+A la derecha de los p-values podemos ver los "signif Codes". Tres asteriscos indican un buen valor de p-value.
+
+El valor que obtenemos para la velocidad es tan pequeño que podemos rechazar H0 respecto a Ha (la hipótesis nula frente a la alternativa). Lo cual quiere decir que la pendiente no es 0 (una linea recta) y que existe una relación entre al velocidad del coche y su distancia de frenado.
+
+
+### Residual Standard Error (RSE)
+
+Formalmente, el error estándar se define como la **desviación estándar** de la **distribución muestral** de un **estadístico muestral** o bien la estimación de la desviación estándar, derivada de una muestra particular usada para computar la estimación (fuente: wikipedia).
+
+
+A standard error is the estimated standard deviation $\hat{\sigma}(\hat{\theta})$ of an estimator $\hat{\theta}$ for a parameter $\theta$
+
+The Residual standard error measures the average amount of distance that will deviate from the true regression line at any point
+
+Es la desviación estándar de los residuos. Valores menores indican un mejor ajuste.
+
+Mide la variabilidad de los valores de la variable dependiente
+
+Decreasing values of RSE indicate better model fitting and vice versa. 
+
+**RSE** también se puede encontrar como $\hat{\sigma}$ o **S**
+
+$$
+n \cdot \hat{\sigma}^2 = \sum_{i=1}^n{E_i^2} = SSE \qquad \text{(Sum of Squared Errors)}
+$$
+
+Cuando tenemos una muestra en lugar de la población usamos **S^2** en lugar de $\sigma$ definido como:
+
+$$
+S^2 = \frac{SSE}{n-2}
+$$
+
+
+y estimamos $\sigma$ con el valor de **S** que sería:
+
+$$
+S = \sqrt{S^2} = \sqrt{\frac{SSE}{n-2}}
+$$
+
+Comprobamos esto:
+
+```{r}
+# Residual Standard Error
+k = length(cars.lm$coefficients) - 1 #
+SSE = sum(cars.lm$residuals**2)
+n=length(cars.lm$residuals)
+sqrt(SSE/(n-(1+k)))
+```
+
+R nos proporciona este valor en el **summary**.  Un elemento que puede resultar confuso es que para invocar este valor **S**, usamos la palabra **sigma** en R.
+
+```{r}
+S.error = summary(cars.lm)$sigma
+```
+
+
+Respecto a los grados de libertad: son el número de puntos que hemos usado para realizar el ajuste menos el número de parametros a calcular. Puesto que contamos con 50 registros y nuestros tenemos dos parametros, los grados de libertad son 48.
+
+Más información en este artículo:
+
+[Regression Analysis: How to interpret S, the Standard error of the Regression](http://blog.minitab.com/blog/adventures-in-statistics-2/regression-analysis-how-to-interpret-s-the-standard-error-of-the-regression)
+
+### Multiple R-Squared
+
+También llamado **coeficiente de determinaciaón** y representado como $R^2$, es un valor que proporciona una medida de la bondad del ajuste del modelo respecto a los datos usados. Toma valores entre 0 y 1. Cuanto más cerca del 1 esté el valor de $R^2$ mejor será nuestro modelo.
+
+En nuestro caso, $R^2$ tiene por valor 0.6510794 lo que quiere decir que **la velocidad explica el 65,11% de las variaciones en la distancia de frenado** y que deben de existir otras variables que pueden afectar a la distancia de frenado. Podrían ser, por ejemplo, el estado de los neumáticos o el estado del asfalto.
+
+Este valor de 65% no es un valor excelente pero tampoco es malo. En general es dificil fijar el valor de $R^2$ que decide si un modelo es aceptable o no y se debe elegir según la aplicación, el campo y la experiencia.  
+
+Formalmente:
+
+$$
+R^2 = 1 - \frac{SSE}{SST}
+$$
+
+donde SSE es la suma de los cuadrados de los errores y SST es la suma de total de los cuadrados
+
+$$
+SSE = \sum_{i=1}^{n}(y_i-\hat{y_i})^2 
+\\
+SST = \sum_{i=1}^{n}(y_i-\bar{y_i})^2 
+$$
+donde $\hat{y_i}$ son los valores ajustados y $\bar{y_i}$ es la media de Y
+
+
+En R sería:
+
+```{r}
+# Calculo del coeficiente de determinación
+dist = cars$dist  
+SSyy = sum((dist-mean(dist))**2)
+SSE = sum(cars.lm$residuals**2)
+(SSyy-SSE)/SSyy
+# o bien
+1- SSE/SSyy
+```
+
+Como vemos el denominador no tiene por qué ser positivo por lo podemos tener un valor negativo de $R^2$ lo cual indicaría un ajuste muy malo.
+
+Hay una relación entre el valor de **RSE** y **SD** que viene dada por la siguiente ecuación:
+
+$$
+RSE = \sqrt{(1-R^2) \cdot SD}
+$$
+RSE puede ser igual a SD en una situación la que $R^2=0$, esto es, en un modelo donde no exista relación entre la variable independiente y las variables explicativas. En la mayoria de las ocasiones ya que $R^2$ es mayor que 0, el valor de RSE será menor al de SD
+
+Notas:
+
+Este valor de no debe ser usado por sí solo para comprobar el ajuste como demuestra [el cuarteto de Anscombe](https://es.wikipedia.org/wiki/Cuarteto_de_Anscombe) que es un conjunto de datos que tienen las mismas propiedades estadísticas pero que son distintas al inspeccionar sus gráficos respectivos.
+
+Existe quien piensa que **S**, error residual estándar, es mejor para evaluar una regresión que $R^2$, coeficiente de determinación. Veanse por ejemplo estos artículos:
+
+* [Standard Error of the Regression vs R-Squared](http://statisticsbyjim.com/regression/standard-error-regression-vs-r-squared/)
+
+
+### Adjusted R-squared
+
+Igual a $R^2$ pero corregido para el tamaño de la muestra y el número de variables y observaciones usados. En modelos de regresión lineal simple (una sola variable) $R^2$ es suficiente pero cuando en modelos de regresión con variables este valor estadístico toma más importancia.
+
+```{r}
+# Calculo del coeficiente de determinación ajustado
+dist = cars$dist  
+n = length(dist)
+k = length(cars.lm$coefficients) - 1
+SSE = sum(cars.lm$residuals**2)
+SSyy = sum((dist-mean(dist))**2)
+1-(SSE/SSyy)*(n-1)/(n-(k+1))
+```
+
+### Estadistico-F
+
+Es un estimador de la **hipótesis nula**: un indicador de la relación entre nuestra variable dependiente y la variable explicativa. 
+
+La hipótesis nula en la regresión es (H0) que no existe una relación entre la variable dependiente y la variable explicativa y por lo tanto los coeficientes serán 0. En este caso el valor de F sería bajo y su p-valor sería superior a 0.05. La hipótesis alternativa (H1) es que existe una relación de dependencia lineal y por lo tanto al menos un coeficiente no es 0 y el valor del estadístico-F será positivo y el valor-p será, idealmente, inferior a 0.05
+
+El estadístico-F es un estimador global y tiene en cuenta el número de variables y observaciones usadas, por lo que cobra importancia en modelos de regresion lineal generalizado (más de una variable dependiente), donde no podemos confiar únicamente en los p-valores.
+
+Aunque R nos los proporciona lo podemos calcularlo:
+
+```{r}
+# Calculo del coeficiente de determinación
+# H0: todos los coeficientes son cero
+# Ha: al menos un coeficiente no es cero
+# Comparamos
+dist = cars$dist  
+n = length(dist)
+SSE = sum(cars.lm$residuals**2)
+SSyy = sum((dist-mean(dist))**2)
+k = length(cars.lm$coefficients) - 1
+((SSyy-SSE)/k) / (SSE/(n-(k+1)))
+```
+
+
+## Comparando el ajuste de modelos
+
+A modo de curiosidad vamos a comparar los estadísticos obtenidos de un ajuste utilizando un numero diferente de registros. Gracias a la función **sample()** podemos extraer una muestra aleatoria de los registros de cars. Eso es lo que hacemos en el siguiente trozo de código donde generamos un dataframe de 30 y 50 elementos, hacemos la regresion lineal y comparamos los valores de algunos estadísticos.
+
+```{r}
+cars30 <- cars[sample(nrow(cars),30),]
+cars40 <- cars[sample(nrow(cars),40),]
+
+cars30.lm <- lm(speed ~ dist, data = cars30)
+cars40.lm <- lm(speed ~ dist, data = cars40)
+```
+
+Los valores obtenidos son: (ATENCIÓN: estos valores pueden cambiar si se repiten los pasos anteriores ya que estamos haciendo un muestreo aleatorio)
+
+```{r table2, echo=FALSE, message=FALSE, warnings=FALSE, results='asis'}
+tabl <- "  
+| Estadistico    | cars.lm  |  cars30  |  cars40  |
+|----------------|:--------:|:--------:|:--------:|
+| Residual error |  15.38   |  14.66   |  14.88   |
+| R^2            |  0.6511  |   0.7556 |   0.6533 |
+| F              |  89.57   |  86.59   |  52.76   |
+" 
+cat(tabl)
+```
+
+
+## Usando el modelo para predecir resultados
+
+Otra función que usaremos frecuentemente es **predict()** que nos estima nuevos valores de la velocidad:
+
+```{r}
+predict(cars.lm, newdata = data.frame(speed = 40))
+```
+
+
+
+```{r}
+predict(cars.lm, newdata = data.frame(speed = 40), interval = "predict")
+```
+
+También podemos pedir los nuevos **intervalos de confianza**
+
+```{r}
+# intervalo de confianza
+predict(cars.lm, newdata = data.frame(speed = 40), interval = "confidence")
+```
+---
+
+Referencias:
+
+* [r-statistics: linear regression](http://r-statistics.co/Linear-Regression.html)
+* [Learn by Marketing: Explaining the lm() summary in R](http://www.learnbymarketing.com/tutorials/explaining-the-lm-summary-in-r/)
+* [Quick Guide: interpreting simple linear model output in R](https://feliperego.github.io/blog/2015/10/23/Interpreting-Model-Output-In-R)
+* [Simple Linear Regresion - an example using R](https://feliperego.github.io/blog/2015/03/11/Simple-Linear-Regression-Example-in-R)
+* [R Guide by Rebecca Lewis](https://rstudio-pubs-static.s3.amazonaws.com/364807_2a19c487ae5e433eb22f61b641b9b12c.html#introduction)
+* [Interpretacion de R lm() output](https://stats.stackexchange.com/questions/5135/interpretation-of-rs-lm-output)
+* [How to interpret the output of the summary method for an lm object in R?](https://stats.stackexchange.com/questions/59250/how-to-interpret-the-output-of-the-summary-method-for-an-lm-object-in-r)
+* [RPubs: Linear Regression dataset cars](https://rpubs.com/elena_petrova/carsregression)
+* [Kaggle: simple linear regression of cars speed and dist](https://www.kaggle.com/hitesh19/simple-linear-regression-of-cars-speed-and-dist)
