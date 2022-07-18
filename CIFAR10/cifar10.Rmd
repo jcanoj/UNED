@@ -1,0 +1,510 @@
+---
+title: "Clasificación CIFAR10"
+output: html_notebook
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+-   **Autores:** Mauricio Beltrán, Juan Antonio Vicente, Alfonso Carabantes
+-   **Fecha:** Julio 2022
+
+------------------------------------------------------------------------
+
+# Introducción
+
+Para la resolución de este ejercicio usaremos la Base de datos obtenida
+
+
+Usaremos durante el entrenamiento los datos de entrenamiento y
+validación y luego finalmente para ese modelo **evaluaremos** el modelo
+con los datos de test.
+
+Durante el ejercicio, vamos a intentar usar diferentes técnicas para ver
+si podemos conseguir mejorar los resultados de precisión de nuestro
+entrenamiento.
+
+Plantearemos diferentes modelos con complejidades y configuraciones
+diferentes en cuanto a la arquitectura, y también veremos como usar el
+**Data Augmentation**, en este caso generando los nuevos gráficos de
+forma estática en lugar de online mientras se ejecuta el entrenamiento.
+Otro de las técnicas que usaremos será el trabajo con una red
+**preentrenada**, configurando un **Feature Extraction** y **Fine
+Tuning**.
+
+Para la resolución del ejercicio hemos construido una serie de
+**funciones** que nos permitirán tener un código más limpio,
+reutilizable y que sea más fácil seguir el flujo del trabajo. Estas
+funciones están en un fichero aparte (aunque se mostrarán al final de la
+documentación del ejercicio).
+
+# Información de versiones e Importación de funciones propias
+
+Presentamos información de las versiones usadas:
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, error=FALSE}
+sessionInfo()
+print(paste0("Versión paquete keras: ", packageVersion("keras")))
+print(paste0("Versión paquete keras: ", packageVersion("tensorflow")))
+```
+
+Cargamos el fichero donde tenemos definidas todas las funciones.
+
+```{r setup, echo=FALSE, message=FALSE, warning=FALSE, error=FALSE, results="hide"}
+#setwd("C:/Users/alfonso/Documents/uned_deep_learning/codigo")
+knitr::opts_knit$set(root.dir = "C:/Users/alfonso/Documents/uned_deep_learning/codigo")
+
+```
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, error=FALSE, results="hide"}
+
+source("./solucion_ejercicio2_recuperacion_cifar10_funciones.R", encoding = "UTF-8")
+
+```
+
+# Instalación y Carga de librerías
+
+Instalamos las librerías en caso de que no lo estén y luego cargamos las
+librerías para poder usarlas.
+
+Si las librerías ya están instaladas sólo se cargarán.[]
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, error=FALSE, results="hide"}
+
+carga_librerias()
+
+```
+
+# Descarga de las imágenes
+
+Vamos automatizar la descarga de las imágenes que vamos a usar.
+
+Verificamos si tenemos ya descargado o no el fichero con las imágenes y
+en caso contrario lo descargamos, luego verificamos si ya está
+descomprimido el fichero y en caso contrario lo descomprimimos.
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, error=FALSE, results="hide"}
+
+carga_dataset()
+
+```
+
+
+# Visualización de Imágenes
+
+Vamos a mostrar varias imágenes de entrenamiento.
+
+```{r}
+
+# Pasamos el directorio de entrenamiento y los nombres de las clases
+visualiza_imagenes_random( )
+
+```
+
+Vamos a pasar a ver los diferentes modelos que vamos a probar.
+
+# Modelo 1 ( 16,32, adam)
+
+En este modelo vamos a tener:
+
+-   Capa **convolución** con 16 filtros, tamaño 3x3 y activación **relu**
+-   Capa de **pooling** tipo maxpooling de tamaño 2x2
+-   Capa **convolución** con 32 filtros, tamaño 3x3 y activación **relu**
+-   Capa de **pooling** tipo maxpooling de tamaño 2x2
+-   Capa para **aplanar** la información
+-   Capa **dénsamente** conectada de 512 neuronas y activación **relu**
+-   Capa de **salida** de 10 neuronas y activación **softmax** que nos da
+    la clasificación
+
+## Creamos el modelo
+
+```{r  echo=TRUE, message=FALSE, warning=FALSE, error=FALSE}
+
+modelo_1 <- crea_modelo_1()
+
+```
+
+## Entrenamos el modelo
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, error=FALSE, results="hide"}
+
+historico_1 <- entrena_modelo(modelo_1)
+
+muestra_historico_entrenamiento( historico_1 )
+
+```
+
+Guardaremos el modelo para usarlo cuando lo necesitamos
+
+```{r  echo=TRUE, message=FALSE, warning=FALSE, error=FALSE, results="hide"}
+
+guarda_modelo( modelo_1, "modelo_1_cifar10")
+
+```
+
+## Evaluamos el modelo con los datos de test
+
+Vamos a evaluar los datos de test a ver que resultados nos dan, cargando
+primero el modelo que queramos usar.
+
+```{r  echo=TRUE, message=FALSE, warning=FALSE, error=FALSE}
+
+modelo_1 <- carga_modelo("modelo_1_cifar10")
+evalua_modelo(modelo_1)
+
+ggplot_confusion_matrix( confusion_matrix(prediccion_clases(modelo_1),y_test ) )
+
+```
+
+# Modelo 2 ( 64,128, 128 adam)
+
+Ampliamos el modelo con una capa de convolución y pooling más y mayor
+número de filtros
+
+En este modelo vamos a tener:
+
+-   Capa **convolución** con 64 filtros, tamaño 3x3 y activación **relu**
+-   Capa de **pooling** tipo maxpooling de tamaño 2x2
+-   Capa **convolución** con 128 filtros, tamaño 3x3 y activación **relu**
+-   Capa de **pooling** tipo maxpooling de tamaño 2x2
+-   Capa **convolución** con 128 filtros, tamaño 3x3 y activación **relu**
+-   Capa de **pooling** tipo maxpooling de tamaño 2x2
+-   Capa para **aplanar** la información
+-   Capa **dénsamente** conectada de 512 neuronas y activación **relu**
+-   Capa de **salida** de 10 neurona y activación **softmax** que nos da la clasificación
+-   Optimizador **adam**
+
+## Creamos el modelo
+
+```{r  echo=TRUE, message=FALSE, warning=FALSE, error=FALSE}
+modelo_2 <- crea_modelo_2()
+```
+
+## Entrenamos el modelo
+
+```{r  echo=TRUE, message=FALSE, warning=FALSE, error=FALSE, results="hide"}
+
+historico_2 <- entrena_modelo(modelo_2)
+
+muestra_historico_entrenamiento( historico_2 )
+
+```
+
+Guardaremos el modelo para usarlo cuando lo necesitamos
+
+```{r  echo=TRUE, message=FALSE, warning=FALSE, error=FALSE, results="hide"}
+
+guarda_modelo( modelo_2, "modelo_2_cifar10")
+
+```
+
+## Evaluamos el modelo con los datos de test
+
+Vamos a evaluar los datos de test a ver que resultados nos dan, cargando
+primero el modelo que queramos usar.
+
+```{r  echo=TRUE, message=FALSE, warning=FALSE, error=FALSE}
+
+modelo_2 <- carga_modelo("modelo_2_cifar10")
+evalua_modelo(modelo_2)
+ggplot_confusion_matrix( confusion_matrix(prediccion_clases(modelo_2),y_test ) )
+
+```
+
+# Modelo 3 ( 64,128, 128 adam Dropout BatchNormalization)
+
+Vamos a construir ahora un modelo más complejo en el que vamos a añadir
+más filtros, así como regularización mediante dropout para conseguir
+mejor generalización.
+
+En este modelo vamos a tener: 
+- Capa **convolución** con 64 filtros,
+tamaño 3x3 y activación **relu** 
+- Capa de **batchnormalization** 
+- Capa de **pooling** tipo maxpooling de tamaño 2x2 
+- Capa **convolución** con 64 filtros, tamaño 3x3 y activación **relu** 
+- Capa de **batchnormalization** - Capa de **pooling** tipo maxpooling de tamaño 2x2 
+- Capa **convolución** con 128 filtros, tamaño 3x3 y activación **relu** - Capa de **batchnormalization** 
+- Capa de **pooling** tipo maxpooling de tamaño 2x2 
+- Capa para **aplanar** la información - Capa **dénsamente** conectada de 512 neuronas y activación **relu** 
+- Capa de **batchnormalization** 
+- Capa de **dropout** quitando el 25% de las neuronas. 
+- Capa de **salida** de 10 neuronas y activación **softmax** que nos da la clasificación
+
+## Creamos el modelo
+
+```{r  echo=TRUE, message=FALSE, warning=FALSE, error=FALSE}
+modelo_3 <- crea_modelo_3()
+```
+
+## Entrenamos el modelo
+
+```{r  echo=TRUE, message=FALSE, warning=FALSE, error=FALSE, results="hide"}
+
+historico_3 <- entrena_modelo(modelo_3)
+
+muestra_historico_entrenamiento( historico_3 )
+
+```
+
+Guardaremos el modelo para usarlo cuando lo necesitamos
+
+```{r  echo=TRUE, message=FALSE, warning=FALSE, error=FALSE, results="hide"}
+
+guarda_modelo( modelo_3, "modelo_3_cifar10")
+
+```
+
+## Evaluamos el modelo con los datos de test
+
+Vamos a evaluar los datos de test a ver que resultados nos dan, cargando
+primero el modelo que queramos usar.
+
+```{r  echo=TRUE, message=FALSE, warning=FALSE, error=FALSE}
+
+modelo_3 <- carga_modelo("modelo_3_cifar10")
+evalua_modelo(modelo_3)
+ggplot_confusion_matrix( confusion_matrix(prediccion_clases(modelo_3),y_test ) )
+
+```
+
+# Modelo 4 ( 64,128, 128 adam Dropout BatchNormalization Augmentation)
+
+Vamos a aplicar la técnica del **Data Augmentation** a nuestro conjuto
+de imágenes. En este caso vamos a usar el data augmentation de forma
+dinámica.
+
+Usaremos un generador de datos que se encargará de transformar de forma aleatoria nuestra imágenes.
+
+
+Con el modelo anterior vamos a aplicar las técnicas de data augmentation
+para tener más muestras con las que trabajar.
+
+En este modelo vamos a tener: 
+- Capa **convolución** con 64 filtros, tamaño 3x3 y activación **relu** 
+- Capa de **batchnormalization** 
+- Capa de **pooling** tipo maxpooling de tamaño 2x2 
+- Capa **convolución** con 64 filtros, tamaño 3x3 y activación **relu** 
+- Capa de **batchnormalization** 
+- Capa de **pooling** tipo maxpooling de tamaño 2x2 
+- Capa **convolución** con 128 filtros, tamaño 3x3 y activación **relu** 
+- Capa de **batchnormalization** 
+- Capa de **pooling** tipo maxpooling de tamaño 2x2 
+- Capa para **aplanar** la información - Capa **dénsamente** conectada de 512 neuronas y activación **relu** 
+- Capa de **batchnormalization** 
+- Capa de **dropout** quitando el 25% de las neuronas. 
+- Capa de **salida** de 10 neuronas y activación **softmax** que nos da la clasificación
+
+
+## Creamos el modelo
+
+```{r  echo=TRUE, message=FALSE, warning=FALSE, error=FALSE}
+modelo_4 <- crea_modelo_4()
+
+```
+
+## Entrenamos el modelo
+
+```{r  echo=TRUE, message=FALSE, warning=FALSE, error=FALSE, results="hide"}
+
+historico_4 <- entrena_modelo_augmentation(modelo_4)
+
+muestra_historico_entrenamiento( historico_4 )
+
+```
+
+Guardaremos el modelo para usarlo cuando lo necesitamos
+
+```{r  echo=TRUE, message=FALSE, warning=FALSE, error=FALSE, results="hide"}
+
+guarda_modelo( modelo_4, "modelo_4_cifar10")
+
+```
+
+## Evaluamos el modelo con los datos de test
+
+Vamos a evaluar los datos de test a ver que resultados nos dan, cargando
+primero el modelo que queramos usar.
+
+```{r echo=TRUE, error=FALSE, message=FALSE, warning=FALSE}
+
+modelo_4 <- carga_modelo("modelo_4_cifar10")
+evalua_modelo(modelo_4)
+ggplot_confusion_matrix( confusion_matrix(prediccion_clases(modelo_4),y_test ) )
+
+```
+
+# Modelo 5 Uso de Red Preentrenado Feature Extraction
+
+Vamos a usar una red **Pre-Entrenada** para implementar el clasificador,
+en este caso usaremos la red **VGG16**. Usaremos la técnica de
+**Extracción de features** que nos permite quitar de la red
+convolucional la parte final del clasificador y poner la nuestra para la
+clasificación binaria que queremos hacer. Hay que tener en cuenta que
+esta red neuronal está pre-entrenada sobre más de 1 millón de imágenes
+(ttp://www.image-net.org) y categoriza en 1.000 categorías.
+
+
+## Creamos el modelo
+
+La extracción de características consiste en utilizar las
+representaciones aprendidas por una red anterior para extraer
+características interesantes de nuevas muestras.
+
+Estas características se ejecutan a través de un nuevo clasificador, que
+se entrena desde cero.
+
+
+Vamos a instanciar una red preentrenada **VGG16** que es una de las
+redes que vienen incluidas en Keras.
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, error=FALSE}
+
+
+conv_base <- application_vgg16(
+  weights = "imagenet",
+  include_top = FALSE,
+  input_shape = c(32, 32, 3)
+)
+```
+
+
+Construimos el modelo añadiendo la capa de clasificación que nosotros
+necesitamos, además de **congelar** los parámetros ya entrenados de
+**VGG16**.
+
+
+```{r  echo=TRUE, message=FALSE, warning=FALSE, error=FALSE}
+
+modelo_5 <- crea_modelo_5()
+```
+
+## Entrenamos el modelo
+
+```{r  echo=TRUE, message=FALSE, warning=FALSE, error=FALSE, results="hide"}
+
+historico_5 <- entrena_modelo(modelo_5)
+
+muestra_historico_entrenamiento( historico_5 )
+
+```
+
+Guardaremos el modelo para usarlo cuando lo necesitamos
+
+```{r  echo=TRUE, message=FALSE, warning=FALSE, error=FALSE, results="hide"}
+
+guarda_modelo( modelo_5, "modelo_5_cifar10")
+
+```
+
+## Evaluamos el modelo con los datos de test
+
+Vamos a evaluar los datos de test a ver que resultados nos dan, cargando
+primero el modelo que queramos usar.
+
+```{r  echo=TRUE, message=FALSE, warning=FALSE, error=FALSE}
+
+modelo_5 <- carga_modelo("modelo_5_cifar10")
+evalua_modelo(modelo_5)
+ggplot_confusion_matrix( confusion_matrix(prediccion_clases(modelo_5),y_test ) )
+
+```
+
+# Modelo 6 Uso de Red Preentrenado Fine Tunning
+
+Vamos a usar una red **Pre-Entrenada** para implementar el clasificador,
+en este caso usaremos la red **VGG16**). Usaremos la técnica de **Fine Tunning** que nos permite por un lado entrenar las últimas capas de
+convolución con nuestras imágenes de entrenamiento y por otro poner la
+parte final del clasificador con las capas densamente conectadas, y así
+poder obtener una mejor aproximación con nuestras imágenes. Hay que
+tener en cuenta que esta red neuronal está pre-entrenada sobre más de 1
+millón de imágenes (ttp://www.image-net.org) y categoriza en 1.000
+categorías.
+
+## Creamos el modelo
+
+La extracción de características consiste en utilizar las
+representaciones aprendidas por una red anterior para extraer
+características interesantes de nuevas muestras.
+
+Estas características se ejecutan a través de un nuevo clasificador, que
+se entrena desde cero.
+
+
+Vamos a instanciar una red preentrenada **VGG16** que es una de las
+redes que vienen incluidas en Keras.
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, error=FALSE}
+
+
+
+conv_base <- application_vgg16(
+  weights = "imagenet",
+  include_top = FALSE,
+  input_shape = c(32, 32, 3)
+)
+```
+
+
+Construimos el modelo añadiendo la capa de clasificación que nosotros
+necesitamos, además de **congelar** los parámetros ya entrenados de
+**VGG16**.
+
+```{r  echo=TRUE, message=FALSE, warning=FALSE, error=FALSE}
+
+modelo_6 <- crea_modelo_6()
+```
+
+## Entrenamos el modelo
+
+```{r  echo=TRUE, message=FALSE, warning=FALSE, error=FALSE, results="hide"}
+
+historico_6 <- entrena_modelo(modelo_6)
+
+muestra_historico_entrenamiento( historico_6 )
+
+```
+
+Guardaremos el modelo para usarlo cuando lo necesitamos
+
+```{r  echo=TRUE, message=FALSE, warning=FALSE, error=FALSE, results="hide"}
+
+guarda_modelo( modelo_6, "modelo_6_cifar10")
+
+```
+
+## Evaluamos el modelo con los datos de test
+
+Vamos a evaluar los datos de test a ver que resultados nos dan, cargando
+primero el modelo que queramos usar.
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, error=FALSE}
+
+modelo_6 <- carga_modelo("modelo_6_cifar10")
+evalua_modelo(modelo_6)
+
+ggplot_confusion_matrix( confusion_matrix(prediccion_clases(modelo_6),y_test ) )
+
+```
+
+# Conclusiones
+
+Hemos podido ir viendo con los diferentes modelos desde el más simple al
+más complejo, pasando por el uso del Data Augmentation o usando redes
+preentrenadas, que hemos conseguido ir mejorando en nuestros resultados
+en el **accuracy** en los valores de test.
+
+Parece claro que el mejor resultado lo hemos alcanzado con el uso del
+**Fine tuning**.
+
+Con esta primera aproximación podríamos intentar afinar más resultados
+probando con diferentes **optimizadores** y sus parámetros, con usar un
+mayor número de **épocas** de entrenamiento o incluso usar otras
+**funciones de activación**.
+
+# Anexo - Funciones  
+
+```{r, }
+
+
+```
